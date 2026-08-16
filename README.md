@@ -39,6 +39,9 @@ modified fields. Nothing is sliced: open it in Bambu Studio, check, slice,
 print plate by plate. Different base profile:
 `BASE_PROCESS="0.30mm Standard @BBL A1M 0.6 nozzle" ./make-3mf.sh`.
 
+The 3mf is a Bambu Studio project file — plates and settings are Bambu-specific
+metadata. Other slicers: use the STLs from `./export-all.sh` instead.
+
 ## Render modes (`render_mode`)
 
 | mode | output |
