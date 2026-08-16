@@ -1,10 +1,16 @@
-# Parametric Ornate Picture Frame
+# Parametric Picture Frame
 
-A fully parametric OpenSCAD picture frame for large frameless canvas paintings,
-segmented so every piece fits a small printer bed (default: Bambu A1 Mini) and
-joins with glueless press-fit dovetails. Default configuration targets a
-130 × 90 × 2 cm canvas: **28 frame pieces + 14 retainer clips**, frame outer
-size ≈ 1451 × 1051 mm, moulding ≈ 85 mm wide.
+We have a 130 × 90 cm painting on stretched canvas and no frame for it. A real
+frame in that size costs a fortune, so I'm printing one — on an A1 Mini with a
+180 mm bed. This generator does the math for that: it splits the frame into 28
+pieces with press-fit dovetails (no glue), plus 14 clips that hold the canvas
+from behind.
+
+Everything is one OpenSCAD project. Pick one of three Querschnitt styles, set
+your canvas size, and the ornament is generated mathematically so that every
+seam lands in a valley of the pattern. The finished frame comes out around
+145 × 105 cm with an 85 mm moulding. The painting keeps hanging on its own two
+wall screws — the frame just clips onto the stretcher and adds the drama.
 
 ![Assembled frame, F3D render](previews/f3d_full.png)
 
