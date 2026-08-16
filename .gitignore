@@ -2,3 +2,6 @@
 stl/
 # scratch previews; the curated gallery images are force-added
 previews/
+# python
+__pycache__/
+.venv/
