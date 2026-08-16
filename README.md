@@ -27,6 +27,17 @@ wall screws — the frame just clips onto the stretcher and adds the drama.
 - `lib/segmentation.scad` — bed-aware cut planning + dovetail joints
 - `lib/clips.scad` — canvas retainer clips
 - `export-all.sh` — exports every part STL into `stl/`
+- `make-3mf.sh` — builds a configured Bambu Studio project from those STLs
+
+## Bambu Studio export
+
+`./make-3mf.sh` produces `parametric-picture-frame.3mf`: one project with all
+29 parts arranged on ~17 A1 Mini plates in assembly order, presets already set
+(A1 mini 0.6 nozzle, PLA Matte, 0.42mm Extra Draft) and the frame-specific
+overrides — lightning infill, 10%, 2 walls, no supports — bundled as orange
+modified fields. Nothing is sliced: open it in Bambu Studio, check, slice,
+print plate by plate. Different base profile:
+`BASE_PROCESS="0.30mm Standard @BBL A1M 0.6 nozzle" ./make-3mf.sh`.
 
 ## Render modes (`render_mode`)
 

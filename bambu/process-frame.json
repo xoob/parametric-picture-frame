@@ -1,0 +1,9 @@
+{
+    "type": "process",
+    "from": "User",
+    "version": "1.10.0.19",
+    "sparse_infill_pattern": "lightning",
+    "sparse_infill_density": "10%",
+    "wall_loops": "2",
+    "enable_support": "0"
+}
