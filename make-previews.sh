@@ -69,3 +69,16 @@ print(f'{-e[0]:.4f},{-e[1]:.4f},{-e[2]:.4f} {u[0]:.4f},{u[1]:.4f},{u[2]:.4f}')")
 done
 
 echo "Done: ${#SHOTS[@]} shots in previews/ and previews/hd/"
+
+# hero: bottom-left corner from a flat raking angle (README lead image)
+for g in body ornament; do
+  openscad --backend=Manifold -D 'render_mode="hero"' -D "export_group=\"$g\"" \
+    -o "/tmp/hero_$g.stl" "$SCAD" 2>/dev/null
+done
+uv run --quiet make-glb.py /tmp/hero_body.stl /tmp/hero_ornament.stl /tmp/hero.glb
+f3d /tmp/hero.glb --no-config --output previews/hd/hero.png --resolution 1800,1080 \
+  --ambient-occlusion --tone-mapping --anti-aliasing-mode ssaa --hdri-ambient \
+  --light-intensity 4.0 --background-color 0.09,0.09,0.10 \
+  --camera-position=-450,-635,155 --camera-focal-point=-655,-478,25 \
+  --camera-view-up=0,0,1 2>/dev/null | grep -v deprecated || true
+echo "hero: previews/hd/hero.png"

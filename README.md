@@ -12,7 +12,7 @@ seam lands in a valley of the pattern. The finished frame comes out around
 145 × 105 cm with an 85 mm moulding. The painting keeps hanging on its own two
 wall screws — the frame just clips onto the stretcher and adds the drama.
 
-![Assembled frame, F3D render](previews/f3d_full.png)
+![Frame corner, F3D render](previews/hd/hero.png)
 
 | | |
 |---|---|
