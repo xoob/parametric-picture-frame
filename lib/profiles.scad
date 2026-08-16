@@ -1,5 +1,11 @@
 // lib/profiles.scad — cross-section (Querschnitt) generators
 //
+// Trade anatomy (framedestination.com, "Understanding Picture Frame Profiles"):
+// face = decorative front width, height = wall-to-tallest-point, lip = inner
+// edge overlapping the art, rabbet = pocket holding the art, heel = outer back
+// edge. Style mapping: ogee ~ "Swan" (ornate traditional), reverse_ogee ~
+// "Reverse Scoop" (rises away from the art), ripple ~ "Stepped".
+//
 // Coordinates: u = distance from the sight (inner) edge, z = height above the
 // back plane. Curves are defined as control point lists [u_frac, z_frac, shape]
 // where u_frac is a fraction of face_w, z_frac a fraction of profile_h, and

@@ -101,7 +101,9 @@ Corners are named by the leg at whose CCW start they sit: `bottom`→BL,
 - `fit_clearance` — slack per side (default 4 mm; hidden by the lip)
 - `lip_overlap` — how far the front lip overlaps the painting face (default 10 mm)
 - `frame_scale` — moulding size, proportional to the painting diagonal
-- `profile_style` — `ogee` (like the reference photo), `reverse_ogee`, `ripple`
+- `profile_style` — `ogee` (trade name "Swan": roll + sunken gold channel),
+  `reverse_ogee` ("Reverse Scoop": crown rising away from the art), `ripple`
+  ("Stepped": ribbed *Wellenleiste* (wave moulding))
 - `ornament_*` — relief on/off, height, repeat period (seams always land in valleys)
 - `printer` — `A1 Mini`, `A1`, `P1 X1`, `H2D` bed presets
 - `dovetail_clearance/taper`, `shrinkage_compensation` — joint fit tuning
