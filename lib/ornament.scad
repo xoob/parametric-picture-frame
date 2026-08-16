@@ -66,8 +66,10 @@ module motif3d(kind, p, bw) {
     }
 }
 
-// all ornament bands along one leg (leg-local coordinates)
-module ornament_leg(L, p) {
+// all ornament bands along one leg (leg-local coordinates), restricted to
+// cells overlapping [x1, x2] — parts only build their own motifs, which keeps
+// non-Manifold backends (MakerWorld) within usable render times
+module ornament_leg(L, p, x1, x2) {
   n = round(L / p);
   for (b = prof_bands(profile_style)) {
     ybc = face_w - (b[0] + b[1]) / 2 * face_w;
@@ -75,11 +77,13 @@ module ornament_leg(L, p) {
     zb = b[2] * profile_h - orn_embed;
     if (b[3] == 0) {
       for (i = [0:n - 1])
-        translate([(i + 0.5) * p, ybc, zb])
-          rotate([0, 0, i % 2 == 0 ? 0 : 180]) motif3d(0, p, bw);
+        if ((i + 1) * p >= x1 && i * p <= x2)
+          translate([(i + 0.5) * p, ybc, zb])
+            rotate([0, 0, i % 2 == 0 ? 0 : 180]) motif3d(0, p, bw);
     } else {
       for (i = [0:2 * n - 1])
-        translate([(i + 0.5) * p / 2, ybc, zb]) motif3d(1, p / 2, bw);
+        if ((i + 1) * p / 2 >= x1 && i * p / 2 <= x2)
+          translate([(i + 0.5) * p / 2, ybc, zb]) motif3d(1, p / 2, bw);
     }
   }
 }

@@ -50,6 +50,15 @@ Nothing is sliced: open in Bambu Studio, check, slice, print plate by plate.
 The 3mf is a Bambu Studio project file — plates and settings are Bambu-specific
 metadata. Other slicers: use the STLs from `./export-all.sh` instead.
 
+## MakerWorld
+
+`makerworld.scad` is the single-file port for MakerWorld's Parametric Model
+Maker, which can't load local includes. Regenerate it with
+`./make-makerworld.sh` — don't edit it directly. Its default render is the fit
+test because PMM renders on load and the full frame would be slow on its
+non-Manifold backend; single parts take ~10 s there. Upload as a draft listing
+first, PMM's render timeout is undocumented.
+
 ## Render modes (`render_mode`)
 
 | mode | output |
