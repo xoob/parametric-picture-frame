@@ -2,8 +2,8 @@
 
 We have a 130 × 90 cm painting on stretched canvas and no frame for it. A real
 frame in that size costs a fortune, so I'm printing one — on an A1 Mini with a
-180 mm bed. This generator does the math for that: it splits the frame into 28
-pieces with press-fit dovetails (no glue), plus 14 clips that hold the canvas
+180 mm bed. This generator does the math for that: it splits the frame into 38
+pieces with press-fit dovetails (no glue), plus 18 clips that hold the canvas
 from behind.
 
 Everything is one OpenSCAD project. Pick one of three *Querschnitt* (cross-section) styles, set
@@ -32,7 +32,7 @@ wall screws — the frame just clips onto the stretcher and adds the drama.
 ## Bambu Studio export
 
 `./make-3mf.sh` produces `parametric-picture-frame.3mf`: one project with all
-29 parts arranged on ~17 A1 Mini plates in assembly order, presets already set
+39 objects arranged on 23 A1 Mini plates in assembly order (plate previews render on first slice), presets already set
 (A1 mini 0.6 nozzle, PLA Matte, 0.42mm Extra Draft) and the frame-specific
 overrides — lightning infill, 10%, 2 walls, no supports — bundled as orange
 modified fields. Nothing is sliced: open it in Bambu Studio, check, slice,
@@ -82,7 +82,7 @@ Corners are named by the leg at whose CCW start they sit: `bottom`→BL,
    every part identically, so joints stay matched. On a 1300 mm span 0.3%
    is ~4 mm — this matters; `fit_clearance = 4` also budgets for it.
 3. **Export everything**: `./export-all.sh [shrink]` → `stl/`.
-4. **Print** 28 parts + `clips.stl` (14 clips, ~1 part per A1 Mini plate for
+4. **Print** 38 parts + `clips.stl` (18 clips, ~1 part per A1 Mini plate for
    the big segments).
 5. **Assemble face-down on a flat surface**: corners first, then straights,
    dropping each tenon into its neighbor's pocket and pressing until seated.

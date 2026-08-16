@@ -2,15 +2,11 @@
 # requires-python = ">=3.10"
 # dependencies = ["trimesh", "numpy"]
 # ///
-# Pack the body + ornament STL exports into one GLB with PBR materials,
-# for viewers with real lighting (e.g. https://f3d.app/viewer).
+# Pack body (+ optional ornament) STL exports into one GLB with PBR materials,
+# for viewers with real lighting (e.g. F3D, https://f3d.app/viewer).
 #
-# Usage:
-#   openscad --backend=Manifold -D 'render_mode="assembled"' -D 'export_group="body"' \
-#     -o /tmp/frame_body.stl parametric-picture-frame.scad
-#   openscad --backend=Manifold -D 'render_mode="assembled"' -D 'export_group="ornament"' \
-#     -o /tmp/frame_ornament.stl parametric-picture-frame.scad
-#   uv run make-glb.py
+# Usage: uv run make-glb.py [body.stl ornament.stl|- out.glb]
+#   (no args: /tmp/frame_body.stl /tmp/frame_ornament.stl parametric-picture-frame.glb)
 
 import numpy as np  # noqa: F401 — kept for uv script deps
 import trimesh
@@ -30,14 +26,18 @@ GOLD = trimesh.visual.material.PBRMaterial(
     name="gold", baseColorFactor=srgb_to_linear([0.83, 0.66, 0.26]),
     metallicFactor=1.0, roughnessFactor=0.35)
 
+import sys
+
+body, ornament, out = (sys.argv[1:4] if len(sys.argv) == 4 else
+                       ("/tmp/frame_body.stl", "/tmp/frame_ornament.stl", "parametric-picture-frame.glb"))
 scene = trimesh.Scene()
-for path, name, mat in [("/tmp/frame_body.stl", "body", WALNUT),
-                        ("/tmp/frame_ornament.stl", "ornament", GOLD)]:
+for path, name, mat in [(body, "body", WALNUT), (ornament, "ornament", GOLD)]:
+    if path == "-":
+        continue
     mesh = trimesh.load(path)
     mesh.visual = trimesh.visual.TextureVisuals(material=mat)
     scene.add_geometry(mesh, node_name=name, geom_name=name)
 
-out = "parametric-picture-frame.glb"
 scene.export(out)
 print(out, f"{len(scene.geometry)} meshes,",
       sum(len(g.faces) for g in scene.geometry.values()), "triangles")

@@ -112,11 +112,14 @@ dt_h = min(rabbet_depth - 2,
              (face_w - (dt_yc - dt_wh / 2 - 2)) / face_w) - 2.9);
 dt_taper_off = tan(dovetail_taper) * dt_h;
 
-// segmentation grids (horizontal legs: bottom/top; vertical legs: left/right)
+// segmentation grids (horizontal legs: bottom/top; vertical legs: left/right).
+// Every part carries its male tenon dt_dl beyond the cut — the FULL part
+// including the tenon must fit the bed, so the segment budget shrinks by dt_dl.
+usable_part = usable - dt_dl;
 p_h = grid_period(frame_ow, ornament_period_target);
 p_v = grid_period(frame_oh, ornament_period_target);
-cuts_h = cuts_for(frame_ow, p_h, usable);
-cuts_v = cuts_for(frame_oh, p_v, usable);
+cuts_h = cuts_for(frame_ow, p_h, usable_part);
+cuts_v = cuts_for(frame_oh, p_v, usable_part);
 nseg_h = len(cuts_h) - 1;
 nseg_v = len(cuts_v) - 1;
 arm_h = cuts_h[0];
@@ -127,7 +130,12 @@ assert(face_w <= usable, "moulding wider than the printer bed — reduce frame_s
 assert(profile_h * prof_min_z(PC, 0, lip_w / face_w) >= rabbet_depth + 5,
        "lip too thin over the rabbet — raise frame_scale or lower rabbet_extra");
 assert(dt_h >= 8, "dovetail too shallow — raise frame_scale");
-assert(max(arm_h, arm_v) <= usable, "corner exceeds bed");
+// bed-fit including the protruding tenon (a part's true bounding box)
+assert(max([for (i = [1:nseg_h]) cuts_h[i] - cuts_h[i - 1]]) + dt_dl <= usable,
+       "segment + tenon exceeds bed");
+assert(max([for (i = [1:nseg_v]) cuts_v[i] - cuts_v[i - 1]]) + dt_dl <= usable,
+       "segment + tenon exceeds bed");
+assert(max(arm_h, arm_v) + dt_dl <= usable, "corner + tenon exceeds bed");
 assert(scroll_w_in >= 1.3, "ornament stroke below printable width");
 assert(part_index >= 1, "part_index starts at 1");
 

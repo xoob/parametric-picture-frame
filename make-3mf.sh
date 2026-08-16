@@ -23,7 +23,7 @@ PROCESS_JSON=$(mktemp -t process-frame).json
 python3 - "$BASE_PROCESS" "$MACHINE" "$PROCESS_JSON" <<'EOF'
 import json, sys
 base, machine, out = sys.argv[1:4]
-p = json.load(open("bambu/process-frame.json"))
+p = json.load(open("bambu/overrides.json"))
 p |= {"inherits": base, "name": base, "print_settings_id": base,
       "compatible_printers": [machine]}
 json.dump(p, open(out, "w"), indent=2)
@@ -43,32 +43,18 @@ parts+=(clips)
 files=()
 for p in "${parts[@]}"; do files+=("stl/$p.stl"); done
 
+# package only — plating is done by fixup-3mf.py, whose layout we can verify
+# (the CLI arranger drifts content over plate edges and builds invalid pairs,
+# and a thumbnail round-trip corrupts plate membership, so neither is used)
 "$BS" "${files[@]}" \
   --load-settings "$SYS/machine/$MACHINE.json;$PROCESS_JSON" \
   --load-filaments "$SYS/filament/$FILAMENT.json" \
-  --arrange 1 --orient 0 --ensure-on-bed \
+  --arrange 0 --orient 0 --ensure-on-bed \
   --export-3mf "$OUT" --outputdir "$PWD"  # must be absolute, "." goes nowhere
 
-# The CLI leaves different_settings_to_system empty; fill it so Bambu Studio
-# shows our overrides as orange (modified) fields on the system preset.
-python3 - "$OUT" <<'EOF'
-import json, shutil, sys, zipfile
-out = sys.argv[1]
-meta = {"type", "from", "version", "inherits", "name", "print_settings_id", "compatible_printers"}
-overrides = ";".join(sorted(set(json.load(open("bambu/process-frame.json"))) - meta))
-cfg_path = "Metadata/project_settings.config"
-tmp = out + ".tmp"
-with zipfile.ZipFile(out) as zin, zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as zout:
-    for item in zin.infolist():
-        data = zin.read(item.filename)
-        if item.filename == cfg_path:
-            cfg = json.loads(data)
-            cfg["different_settings_to_system"] = [overrides, "", ""]
-            data = json.dumps(cfg, indent=4).encode()
-        zout.writestr(item, data)
-shutil.move(tmp, out)
-print(f"{out}: marked as modified-from-system: {overrides}")
-EOF
+python3 bambu/fixup-3mf.py replate "$OUT"
+python3 bambu/fixup-3mf.py verify "$OUT"
+python3 bambu/fixup-3mf.py metadata "$OUT"
 
 plates=$(unzip -l "$OUT" | grep -c 'plate_[0-9]*_small.png')
 echo "Done: $OUT (${#parts[@]} parts, $plates plates, base process: $BASE_PROCESS)"
