@@ -1,0 +1,4 @@
+# generated artifacts — recreate with ./export-all.sh and make-glb.py
+stl/
+# scratch previews; the curated gallery images are force-added
+previews/
