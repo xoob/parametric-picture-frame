@@ -6,5 +6,5 @@
     "sparse_infill_density": "10%",
     "wall_loops": "2",
     "wall_generator": "arachne",
-    "enable_support": "0"
+    "enable_support": "1"
 }

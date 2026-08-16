@@ -6,7 +6,8 @@
 // recessed; printed clips hold it and carry the frame off the stretcher.
 //
 // Print orientation (all parts): decorative face UP, back plane on the bed.
-// Suggested slicing: 0.6 mm nozzle, 2 walls, lightning infill, no supports.
+// Supports required: the lip underside floats over the rabbet void.
+// Suggested slicing: 0.6 mm nozzle, 2 walls, lightning infill, auto supports.
 //
 // Workflow: print fit_test first, tune dovetail_clearance/shrinkage_compensation,
 // then export all parts with export-all.sh.

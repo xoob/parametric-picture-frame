@@ -27,17 +27,25 @@ wall screws — the frame just clips onto the stretcher and adds the drama.
 - `lib/segmentation.scad` — bed-aware cut planning + dovetail joints
 - `lib/clips.scad` — canvas retainer clips
 - `export-all.sh` — exports every part STL into `stl/`
-- `make-3mf.sh` — builds a configured Bambu Studio project from those STLs
 
 ## Bambu Studio export
 
-`./make-3mf.sh` produces `parametric-picture-frame.3mf`: one project with all
-39 objects arranged on 23 A1 Mini plates in assembly order (plate previews render on first slice), presets already set
-(A1 mini 0.6 nozzle, PLA Matte, 0.42mm Extra Draft) and the frame-specific
-overrides — lightning infill, 10%, 2 walls, no supports — bundled as orange
-modified fields. Nothing is sliced: open it in Bambu Studio, check, slice,
-print plate by plate. Different base profile:
-`BASE_PROCESS="0.30mm Standard @BBL A1M 0.6 nozzle" ./make-3mf.sh`.
+The project 3mf is built by the local `openscad-3mf` skill (Claude Code), not
+by a script in this repo:
+
+```
+./export-all.sh
+read -r NH NV <<< "$(grep -o 'COUNTS [0-9]* [0-9]*' /tmp/frame_bom.echo | awk '{print $2, $3}')"
+parts=(corner_BL B{1..$NH} corner_BR R{1..$NV} corner_TR T{$NH..1} corner_TL L{$NV..1} clips)
+python3 ~/.claude/skills/openscad-3mf/scripts/build-3mf.py stl/${^parts}.stl \
+  --out parametric-picture-frame.3mf --overrides bambu/overrides.json
+```
+
+Result: 39 objects on 23 A1 Mini plates in assembly order (plate previews
+render on first slice), presets set (A1 mini 0.6 nozzle, PLA Matte, 0.42mm
+Extra Draft) and the overrides from `bambu/overrides.json` — lightning infill,
+10%, 2 walls, Arachne, auto supports — bundled as orange modified fields.
+Nothing is sliced: open in Bambu Studio, check, slice, print plate by plate.
 
 The 3mf is a Bambu Studio project file — plates and settings are Bambu-specific
 metadata. Other slicers: use the STLs from `./export-all.sh` instead.
@@ -59,7 +67,9 @@ Corners are named by the leg at whose CCW start they sit: `bottom`→BL,
 ## Print settings (tested target)
 
 - Bambu A1 Mini, Cool Super Tack plate, Matte Black PLA, 0.6 mm nozzle
-- Orientation: decorative face UP (exports already lie this way) — no supports
+- Orientation: decorative face UP (exports already lie this way)
+- Supports ON (auto): the lip underside floats over the rabbet void — supports
+  generate only there. The 3mf overrides enable this
 - 2 walls, **lightning infill** — the frame is decorative, not structural
 - The dovetail pocket roof is a small internal bridge; default bridge settings are fine
 
