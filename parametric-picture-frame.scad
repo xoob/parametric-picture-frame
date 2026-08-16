@@ -32,7 +32,7 @@ frame_scale = 1.0;            // [0.5:0.05:2.0]
 // Generate relief ornament on the bands
 ornament_enable = true;
 // Ornament relief height (mm)
-ornament_depth = 1.6;         // [0.6:0.2:3]
+ornament_depth = 2.6;         // [1.0:0.2:4]
 // Target ornament repeat period (mm)
 ornament_period_target = 42;  // [24:2:80]
 // Preview color of the frame body (previews only, not exported)
@@ -53,7 +53,7 @@ dovetail_taper = 0.4;         // [0:0.1:2]
 shrinkage_compensation = 1.0; // [0.99:0.001:1.02]
 
 /* [Output] */
-render_mode = "assembled";    // [assembled, exploded, part, fit_test, clips, bom]
+render_mode = "assembled";    // [assembled, exploded, part, profile, hero, fit_test, clips, bom]
 // Which kind of part to export (render_mode=part)
 part_kind = "straight";       // [straight, corner]
 // Leg; a corner is the one at this leg's CCW start: bottom=BL, right=BR, top=TR, left=TL
@@ -84,7 +84,7 @@ sight_h = painting_height - 2 * lip_overlap;
 lip_w = lip_overlap + fit_clearance;
 face_w = 0.054 * norm([painting_width, painting_height]) * frame_scale;
 rabbet_depth = painting_thickness + rabbet_extra;
-profile_h = max(0.45 * face_w, rabbet_depth + 12);
+profile_h = max(prof_h_ratio(profile_style) * face_w, rabbet_depth + 12);
 frame_ow = sight_w + 2 * face_w;
 frame_oh = sight_h + 2 * face_w;
 
@@ -137,7 +137,7 @@ assert(max([for (i = [1:nseg_h]) cuts_h[i] - cuts_h[i - 1]]) + dt_dl <= usable,
 assert(max([for (i = [1:nseg_v]) cuts_v[i] - cuts_v[i - 1]]) + dt_dl <= usable,
        "segment + tenon exceeds bed");
 assert(max(arm_h, arm_v) + dt_dl <= usable, "corner + tenon exceeds bed");
-assert(scroll_w_in >= 1.3, "ornament stroke below printable width");
+assert(orn_min_w >= 2.0, "ornament features below printable width");
 assert(part_index >= 1, "part_index starts at 1");
 
 // ---- leg helpers ----
@@ -192,24 +192,38 @@ module leg_wedge(L) {
 }
 
 // full decorated leg: mitered ends, ornament, dovetail pockets, clip cavities.
-// Body and ornament are separate colored solids so previews show the relief
-// with contrast; exports union them into one mesh.
-module leg_local(leg) {
+// Body, body-color relief and gold relief are separate colored solids so
+// previews show materials; exports union them into one mesh. x1/x2 restrict
+// which motifs/pockets/cavities get built — pass the mask range for single
+// parts so render cost scales with the part, not the 1.45 m leg.
+module leg_local(leg, x1 = 0, x2 = -1) {
   L = legL(leg);
-  if (export_group != "ornament")
+  xe = x2 < 0 ? L : x2;
+  if (export_group != "ornament") {
     color(body_color) render(convexity = 10)
       difference() {
         intersection() {
           leg_body(L);
           leg_wedge(L);
         }
-        for (xc = leg_cuts(leg)) dt_pocket(xc);
-        for (x = clip_xs(leg)) clip_cavity(x);
+        for (xc = leg_cuts(leg))
+          if (xc >= x1 - dt_dl - 1 && xc <= xe + dt_dl + 1) dt_pocket(xc);
+        for (x = clip_xs(leg))
+          if (x >= x1 - 20 && x <= xe + 20) clip_cavity(x);
+        if (ornament_enable)
+          color(body_color) ornament_leg(L, leg_p(leg), x1, xe, 2);  // engraves
       }
+    if (ornament_enable)
+      color(body_color) render(convexity = 10)
+        intersection() {
+          ornament_leg(L, leg_p(leg), x1, xe, 1);  // body-color relief
+          leg_wedge(L);
+        }
+  }
   if (ornament_enable && export_group != "body")
     color(ornament_color) render(convexity = 10)
       intersection() {
-        ornament_leg(L, leg_p(leg));
+        ornament_leg(L, leg_p(leg), x1, xe, 0);  // gold relief + plinth
         leg_wedge(L);
       }
 }
@@ -252,7 +266,7 @@ module part_straight_inplace(leg, i) {
   difference() {
     union() {
       intersection() {
-        leg_local(leg);
+        leg_local(leg, x1, x2);
         mask_slab(x1, x2);
       }
       color(body_color) dt_tenon(x2);
@@ -270,12 +284,12 @@ module part_corner_inplace(leg) {
     union() {
       leg_xform(pl)
         intersection() {
-          leg_local(pl);
+          leg_local(pl, cN, legL(pl));
           mask_slab(cN, legL(pl) + 1);
         }
       leg_xform(leg) {
         intersection() {
-          leg_local(leg);
+          leg_local(leg, 0, c0);
           mask_slab(-1, c0);
         }
         color(body_color) dt_tenon(c0);
@@ -348,6 +362,15 @@ if (render_mode == "assembled") {
         part_straight_inplace(leg, part_index);
     }
   }
+} else if (render_mode == "hero") {
+  // corner + adjacent segments in place: the README hero shot subject
+  part_corner_inplace("b");
+  leg_xform("b") part_straight_inplace("b", 1);
+  leg_xform("l") part_straight_inplace("l", leg_nseg("l"));
+} else if (render_mode == "profile") {
+  // cross-section silhouette, for matching the Querschnitt against references
+  color(body_color) linear_extrude(2)
+    polygon(leg_xsec_pts(PC, face_w, profile_h, lip_w, rabbet_depth, curve_step));
 } else if (render_mode == "fit_test") {
   color(body_color) scale([shrinkage_compensation, shrinkage_compensation, 1]) fit_test();
 } else if (render_mode == "clips") {

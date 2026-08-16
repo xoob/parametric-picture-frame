@@ -22,7 +22,7 @@ SHOTS=(
   'corner_bl_back|1200x900|235,25|render_mode="part";part_kind="corner"|2'
   'part_b2_iso|1200x900|55,25|render_mode="part";part_index=2|2'
   'style_revogee|1200x900|55,25|render_mode="part";part_index=2;profile_style="reverse_ogee"|2'
-  'style_ripple|1200x900|55,25|render_mode="part";part_index=2;profile_style="ripple"|2'
+  'style_ripple|1200x900|55,25|render_mode="part";part_index=2;profile_style="ripple"|1'
   'clips_iso|1000x750|55,25|render_mode="clips"|1'
   'fit_iso|1000x750|55,25|render_mode="fit_test"|1'
 )

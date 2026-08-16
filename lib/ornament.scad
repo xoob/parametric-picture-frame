@@ -1,85 +1,151 @@
-// lib/ornament.scad — mathematically generated relief ornament
+// lib/ornament.scad — mathematically generated relief/engrave ornament, v2
 //
-// Two band motifs, both emitted as single valid polygons (no self-intersection):
-//  * running scroll: squashed Archimedean-style spiral r = R*(th/thmax)^k,
-//    stroked with a tapering width, alternately rotated 180 deg (Vitruvian wave)
-//  * scallop: half-annulus arc + central dart (egg-and-dart flavor)
-// Relief height is ornament_depth; minimum stroke width stays >= 1.35 mm so a
-// 0.6 mm nozzle (and 0.4 mm for compatibility) can print every ridge.
+// One ornament set per profile style (see prof_bands):
+//   0 running_scroll — connected Vitruvian wave, bold stroked curls (gold)
+//   1 acanthus       — leaning lobed flame-leaf, one per period (body color)
+//   2 egg_and_dart   — domed eggs + darts, period p/3 (gold)
+//   3 meander        — square-wave Greek key, ENGRAVED into crest plateaus
+// Relief motifs get pillowy rounded tops via stacked inset slabs; every
+// feature stays >= orn_min_w so a 0.6 mm nozzle prints crisp ridges.
+
+orn_min_w = 2.2;      // narrowest stroke/feature, mm
+plinth_h = 0.6;       // raised band background under gold relief, mm
+engrave_depth = 1.3;  // meander groove depth, mm
 
 function _unit(v) = v / max(norm(v), 1e-9);
 
-// stroke a polyline into a closed polygon, width lerping w0 -> w1 along it
-function stroke_poly(pts, w0, w1) =
+// stroke a polyline into a closed polygon; ws = per-point width list
+function stroke_poly(pts, ws) =
   let(n = len(pts) - 1,
       ts = [for (i = [0:n]) _unit(pts[min(i + 1, n)] - pts[max(i - 1, 0)])],
-      ws = [for (i = [0:n]) w0 + (w1 - w0) * i / n],
       lft = [for (i = [0:n]) pts[i] + [-ts[i][1], ts[i][0]] * ws[i] / 2],
       rgt = [for (i = [0:n]) pts[i] - [-ts[i][1], ts[i][0]] * ws[i] / 2])
   concat(lft, [for (i = [n:-1:0]) rgt[i]]);
 
-// spiral polyline from the outer end (theta=thmax) inward to theta=th0
-function spiral_pts(R, sy, th0, thmax, kexp, step) =
+function lerp_w(n, w0, w1) = [for (i = [0:n]) w0 + (w1 - w0) * i / n];
+
+function spiral_pts(R, th0, thmax, kexp, step) =
   [for (th = [thmax:-step:th0])
-    let(r = R * pow(th / thmax, kexp)) [r * cos(th), r * sin(th) * sy]];
+    let(r = R * pow(th / thmax, kexp)) [r * cos(th), r * sin(th)]];
 
-scroll_w_out = 2.3;  // outer stroke width, mm
-scroll_w_in = 1.35;  // stroke width at the spiral tip, mm
+// rounded-top relief: stacked slabs with negative-radius offsets on a
+// quadratic-ish progression -> soft <=50 deg dome flanks, no supports
+module relief_extrude(h, inset) {
+  n = 6;  // ~0.4 mm steps: matches the print's layer quantization
+  for (k = [0:n - 1]) {
+    dz = h / n;
+    translate([0, 0, k * dz])
+      linear_extrude(dz + (k < n - 1 ? 0.02 : 0), convexity = 8)
+        offset(r = -inset * pow(k / (n - 1), 1.5)) children();
+  }
+}
 
-// 2D running-scroll motif centered on the origin, one ornament period wide
+// ---- motif 0: running scroll (one fat curl per period + continuous wave) ----
 module scroll_motif(p, bw) {
-  R = 0.40 * p;
-  sy = min(0.62, (bw / 2 - scroll_w_out / 2 - 0.6) / R);
-  pts = spiral_pts(R, sy, 90, 1080, 0.85, 12);
-  tip = pts[len(pts) - 1];
+  wave = [for (i = [0:24]) let(x = -p / 2 + p * i / 24) [x, 0.30 * bw * cos(360 * x / p)]];
+  curl = spiral_pts(0.45 * bw, 80, 660, 0.90, 10);
   intersection() {
     union() {
-      polygon(stroke_poly(pts, scroll_w_out, scroll_w_in));
-      translate(tip) circle(d = scroll_w_in * 1.4);
-      circle(d = 2.2);  // spiral eye
+      polygon(stroke_poly(wave, lerp_w(24, 4.6, 4.6)));
+      translate([0, -0.02 * bw]) {
+        polygon(stroke_poly(curl, lerp_w(len(curl) - 1, 4.8, 3.0)));
+        translate(curl[len(curl) - 1]) circle(d = 3.6);
+      }
     }
-    square([p - 1.0, bw - 0.4], center = true);
+    square([p - 0.01, bw - 0.4], center = true);
   }
 }
 
-// 2D scallop motif: half-annulus + dart, base sitting on the band's inner side
-module scallop_motif(p2, bw) {
-  R = min(0.44 * p2, 0.85 * bw);
-  t = 1.6;
+// ---- motif 1: acanthus flame-leaf, lying along the band, leaning right ----
+// fan of finger-ellipses radiating from the leaf base: overlapping leaflets
+// with V-notches between the tips, the classic acanthus silhouette
+module acanthus_motif(p, bw) {
   intersection() {
-    translate([0, -bw / 2 + 0.3]) union() {
-      polygon(concat(
-        [for (a = [0:7.5:180]) R * [cos(a), sin(a)]],
-        [for (a = [180:-7.5:0]) (R - t) * [cos(a), sin(a)]]));
-      polygon([[-1.0, 0], [1.0, 0], [0, max(R - t - 0.8, 2)]]);
+    translate([-0.48 * p, -0.30 * bw]) union() {
+      for (j = [-1:3]) {
+        ang = 12 + j * 17;                      // fan spread, leaning up-right
+        len = 0.72 * p * (1 - 0.14 * abs(j - 1));  // middle finger longest
+        rotate([0, 0, ang])
+          translate([len / 2, 0])
+            scale([1, (0.13 + 0.02 * abs(j)) * bw / (len / 2)]) circle(d = len);
+      }
+      circle(d = 0.30 * bw);  // base knuckle
     }
-    square([p2 - 0.8, bw - 0.4], center = true);
+    square([p - 0.01, bw - 0.4], center = true);
   }
 }
 
-// extruded, cache-friendly motif (identical instances hit the geometry cache)
-module motif3d(kind, p, bw) {
-  render(convexity = 6)
-    linear_extrude(orn_embed + ornament_depth, convexity = 6) {
-      if (kind == 0) scroll_motif(p, bw);
-      else scallop_motif(p, bw);
+// ---- motif 2: egg and dart (cell = p/3; darts sit on the cell edges) ----
+module egg_dart_motif(p3, bw) {
+  intersection() {
+    union() {
+      scale([1, (0.72 * bw) / (0.58 * p3)]) circle(d = 0.58 * p3);
+      for (sx = [-1, 1])
+        translate([sx * p3 / 2, 0])
+          polygon([[-1.3, -0.36 * bw], [1.3, -0.36 * bw], [0, 0.30 * bw]]);
+    }
+    square([p3 - 0.01, bw - 0.4], center = true);
+  }
+}
+
+// ---- motif 3: meander, square wave (engraved; cell = p/2) ----
+module meander_motif(p2, bw) {
+  a = 0.30 * bw;
+  pts = [[-p2 / 2, -a], [-p2 / 4, -a], [-p2 / 4, a], [p2 / 4, a], [p2 / 4, -a], [p2 / 2, -a]];
+  for (i = [0:len(pts) - 2])
+    hull() {
+      translate(pts[i]) circle(d = 3.0);
+      translate(pts[i + 1]) circle(d = 3.0);
     }
 }
 
-// all ornament bands along one leg (leg-local coordinates)
-module ornament_leg(L, p) {
-  n = round(L / p);
-  for (b = prof_bands(profile_style)) {
-    ybc = face_w - (b[0] + b[1]) / 2 * face_w;
-    bw = (b[1] - b[0]) * face_w;
-    zb = b[2] * profile_h - orn_embed;
-    if (b[3] == 0) {
-      for (i = [0:n - 1])
-        translate([(i + 0.5) * p, ybc, zb])
-          rotate([0, 0, i % 2 == 0 ? 0 : 180]) motif3d(0, p, bw);
+// cached 3D motif; relief motifs sink 0.1 into their base for a clean union
+hm_px = 3;  // must match PX in heightmaps/make-heightmaps.py
+
+module motif3d(kind, p, bw) {
+  render(convexity = 8) {
+    if (kind == 0) {
+      // sculpted heightmap relief: smooth rope domes, generated by
+      // heightmaps/make-heightmaps.py for the current period/band size
+      scale([p / round(p * hm_px), bw / round(bw * hm_px), ornament_depth / 100])
+        surface(file = "heightmaps/scroll.png", center = true, convexity = 8);
+    } else if (kind == 3) {
+      linear_extrude(engrave_depth + 0.1, convexity = 8) meander_motif(p, bw);
     } else {
-      for (i = [0:2 * n - 1])
-        translate([(i + 0.5) * p / 2, ybc, zb]) motif3d(1, p / 2, bw);
+      translate([0, 0, -0.1]) relief_extrude(ornament_depth + 0.1,
+                                             kind == 1 ? 1.3 : 1.0) {
+        if (kind == 1) acanthus_motif(p, bw);
+        else egg_dart_motif(p, bw);
+      }
+    }
+  }
+}
+
+// all bands of one leg, filtered by `want`:
+//   0 = gold relief (+ gold plinth)   1 = body-color relief   2 = engraves
+// Restricted to cells overlapping [x1, x2] so parts only build their own
+// motifs (keeps non-Manifold backends usable).
+module ornament_leg(L, p, x1, x2, want) {
+  for (b = prof_bands(profile_style)) {
+    motif = b[3];
+    gold = b[4] == 1;
+    engrave = b[5] == 1;
+    if ((want == 0 && gold && !engrave) || (want == 1 && !gold && !engrave)
+        || (want == 2 && engrave)) {
+      ybc = face_w - (b[0] + b[1]) / 2 * face_w;
+      bw = (b[1] - b[0]) * face_w;
+      cell = motif == 2 ? p / 3 : motif == 3 ? p / 2 : p;
+      n = round(L / cell);
+      zb = b[2] * profile_h;
+      if (!engrave && gold)  // continuous plinth under gold bands
+        translate([max(0, x1 - 1), ybc - bw / 2, zb - 0.1])
+          cube([min(L, x2 + 1) - max(0, x1 - 1), bw, plinth_h + 0.1]);
+      for (i = [0:n - 1])
+        if ((i + 1) * cell >= x1 && i * cell <= x2)
+          translate([(i + 0.5) * cell, ybc,
+                     engrave ? zb - engrave_depth : zb + (gold ? plinth_h : 0)])
+            mirror([0, motif == 0 && i % 2 == 1 ? 1 : 0, 0])
+              motif3d(motif, cell, bw);
     }
   }
 }
