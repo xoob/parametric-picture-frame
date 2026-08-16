@@ -6,7 +6,7 @@ frame in that size costs a fortune, so I'm printing one — on an A1 Mini with a
 pieces with press-fit dovetails (no glue), plus 14 clips that hold the canvas
 from behind.
 
-Everything is one OpenSCAD project. Pick one of three *Querschnitt* styles, set
+Everything is one OpenSCAD project. Pick one of three *Querschnitt* (cross-section) styles, set
 your canvas size, and the ornament is generated mathematically so that every
 seam lands in a valley of the pattern. The finished frame comes out around
 145 × 105 cm with an 85 mm moulding. The painting keeps hanging on its own two
